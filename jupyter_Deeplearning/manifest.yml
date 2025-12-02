@@ -1,0 +1,13 @@
+---
+name: Deep Learning Jupyter Lab Environment
+category: Interactive Apps
+subcategory: Servers
+role: batch_connect
+description: |
+  DL-Collab is a custom container stack that has a jupyterlab environment with GPU support and many deeplearning packages.
+
+  To use a folder in the /scratch space. You can make a symlink in your home directory using `ln -s <path to folder>` using the terminal.
+
+  For more information on the packages included, please see the documentation page on our [wiki]:
+
+  [wiki]: https://ucdigitalsms.atlassian.net/wiki/spaces/RCC/pages/3575775304/Deeplearning+Container

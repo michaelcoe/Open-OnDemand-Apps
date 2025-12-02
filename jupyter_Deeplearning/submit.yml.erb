@@ -1,0 +1,18 @@
+---
+batch_connect:
+  template: "basic"
+  set_host: "host=$(hostname -f)"
+  conn_params:
+    - csrftoken
+    - token
+script:
+  apptainer_img: <%= apptainer_img %>
+  native:
+    - "-N 1"
+    - "--cpus-per-task"
+    - "<%= num_cores.to_i %>"
+    - "--mem"
+    - "<%= memory_gb.blank? ? "8" : memory_gb.to_i %>G"
+    - "--time"
+    - "<%= bc_num_hours.blank? ? "1" : bc_num_hours.to_i %>:00:00"
+    - "--gres=gpu:<%= gpu_selection %>:1"

@@ -1,0 +1,119 @@
+BootStrap: docker
+From: pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+
+%post
+    # Installing all dependencies
+    apt-get -y update
+    apt-get -y upgrade
+    apt-get -y install --no-install-recommends \
+        build-essential \
+        wget \
+        bzip2 \
+        git \
+        bash \
+        gcc \
+        gfortran \
+        g++ \
+        make \
+        file \
+        python3-dev \
+        python-dev-is-python3 \
+        perl \
+        swig
+     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
+    # install openmpi to ensure MPI compatibility with cluster
+    echo "Installing Open MPI"
+    export OMPI_DIR=/opt/ompi
+    export OMPI_VERSION=5.0.3
+    export OMPI_URL="https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$OMPI_VERSION.tar.bz2"
+    mkdir -p /tmp/ompi
+    mkdir -p /opt
+    # Download
+    cd /tmp/ompi && wget -O openmpi-$OMPI_VERSION.tar.bz2 $OMPI_URL && tar -xjf openmpi-$OMPI_VERSION.tar.bz2
+    # Compile and install
+    cd /tmp/ompi/openmpi-$OMPI_VERSION && ./configure --prefix=$OMPI_DIR && make -j$(nproc) install
+    
+    pip install --upgrade pip
+
+    export PYTHON_VERSION=3.12.3
+
+    # Create conda environment with strict conda-forge priority (matching batch file strategy)
+    mamba create -n deeplearning python=${PYTHON_VERSION} -y && \
+    mamba run -n deeplearning conda config --env --add channels conda-forge && \
+    mamba run -n deeplearning conda config --env --set channel_priority strict
+
+    # Clean conda cache to prevent compatibility issues (batch file strategy)
+    mamba clean --all -y
+
+    # Install NumPy without version constraint (NumPy 2.0 compatible with modern ML stack)
+    mamba install -n deeplearning -c conda-forge -y \
+    numpy \
+    && mamba clean -all -y
+
+    # install jupyter ecosystem
+    mamba install -n deeplearning -c conda-forge -y \
+    jupyter jupyterlab ipywidgets \
+    && mamba clean -all -y
+
+    # Scientific computing core - including missing scikit-learn (batch file grouping)
+    mamba install -n deeplearning -c conda-forge -y \
+    pandas scipy matplotlib seaborn scikit-learn \
+    && mamba clean -all -y
+
+    # Image processing libraries (batch file grouping)
+    mamba install -n deeplearning -c conda-forge -y \
+    scikit-image tifffile imageio-ffmpeg pillow \
+    && mamba clean -all -y
+
+    # Keep existing opencv separate (original dockerfile had it)
+    mamba install -n deeplearning -c conda-forge -y \
+    opencv \
+    && mamba clean -all -y
+
+    # Install jax and optax
+    mamba run -n deeplearning -c conda-forge -y \
+    jax jaxlib optax \
+    && mamba clean -all -y
+
+    # Install transformers
+    mamba run -n deeplearning -c conda-forge -y \
+    transformers datasets \
+    && mamba clean -all -y
+
+    # Last ML/DL tools
+    mamba run -n deeplearning -c conda-forge -y \
+    nltk sentencepiece seqeval simpleitk \
+    && mamba clean -all -y
+    
+    # Install TensorFlow via pip for better compatibility (keeping existing)
+    mamba run -n deeplearning pip install --no-cache-dir \
+    tensorflow[and-cuda] keras
+
+    # Additional ML/DL tools (keeping existing + adding batch file items)
+    mamba run -n deeplearning pip install --no-cache-dir \
+    albumentations timm
+    
+    # Make a folder to mount
+    mkdir -p /workspace
+
+%environment
+  PATH="/opt/conda/envs/deeplearning/bin:$PATH"
+  PYTHONPATH="/opt/conda/envs/deeplearning/lib:$PYTHONPATH"
+  # Library path fix for GLIBCXX conflicts
+  LD_LIBRARY_PATH="/opt/conda/envs/deeplearning/lib:$LD_LIBRARY_PATH"
+
+%runscript
+  . /opt/conda/etc/profile.d/conda.sh
+  conda init
+  conda activate deeplearning
+  cd /workspace
+  jupyter lab --config="${CONFIG_FILE}"
+
+%labels
+  Author michael.coe@canterbury.ac.nz
+  Version 0.0.1
+
+%help
+  Base Jupyter Notebook support with nvidia CUDA runtime libraries and Ubuntu24.04

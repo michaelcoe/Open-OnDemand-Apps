@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Benchmark info
+echo "TIMING - Starting main script at: $(date)"
+
+# Set working directory to home directory
+cd "${HOME}"
+
+#
+# Start Whisperx-WebUI Server
+#
+
+# Purge the module environment to avoid conflicts
+
+# Need to fill the part out
+APPTAINER_IMG_PATH="${APPTAINER_IMG_PATH:-/shared/UCsoftware/ApptainerImages/d}"
+APPTAINER_IMG_URI="${APPTAINER_IMG_PATH}/${apptainer_img}.sif"
+
+# Clean the environment
+module purge
+
+if [ ! -f "$APPTAINER_IMG_URI" ]; then
+  echo "${APPTAINER_IMG_URI} does not exist."
+  exit 1
+fi
+
+# prevent Python from looking in the $HOME directory
+export PYTHONNOUSERSITE=1
+
+set -x
+
+# Launch the apptainer server
+apptainer_run="apptainer run --nv \
+--env "CONFIG_FILE=${CONFIG_FILE}" \
+--env "PYTHONPATH=${PYTHONPATH}" \
+--mount type=bind,src=${HOME},dst=/workspace
+--mount type=bind,src=/scratch,dst=/scratch"
+
+${apptainer_run} ${APPTAINER_IMG_URI}

@@ -1,0 +1,61 @@
+---
+cluster: "uc_cluster"
+attributes:
+  apptainer_img:
+    label: "Version"
+    widget: "select"
+    value: "DL-Collab:latest"
+    options:
+      - [ DL-Collab:latest, DL-Collab-20251014 ]
+    required: true
+    cacheable: false
+    help: |
+      "Choose the version of Deep learning Lab that you want for your session"
+    required: true
+    cacheable: false
+  gpu_selection:
+    label: "GPU Selection"
+    widget: "select"
+    value: "L40s"
+    options:
+      - [ L40s, l40s ]
+      - [ H100, h100 ]
+    required: true
+    cacheable: false
+    help: |
+      "Choose which type of GPU you want to run your jobs on. In general, the L40S are good for development."
+    required: true
+    cacheable: false
+  num_cores:
+    widget: "number_field"
+    label: "Number of cores"
+    max: 32
+    min: 1
+    step: 1
+    value: 4
+    help: |
+      "Please only request additional cores if you know you will be running jobs supporting parallel processes."
+  memory_gb:
+    widget: "number_field"
+    label: "Memory Allocation in GB"
+    min: 1
+    step: 1
+    max: 50    
+    value: 8
+    required: false
+    cacheable: false
+    help: |
+      Maximum memory to be use in GBytes on the node.
+  virtual_dir:
+    widget: "path_selector"
+    label: "Python Virtual Environment"
+    data-target-file-type: dirs  # Valid values are: files, dirs, or both
+    readonly: false
+    help: "Select the directory in wich you installed your virtual environment; if no virtual environment, leave blank"
+form:
+  - apptainer_img
+  - gpu_selection
+  - bc_num_hours
+  - num_cores
+  - memory_gb
+  - virtual_dir
